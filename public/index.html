@@ -1,0 +1,1349 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Destroy Any Website - Custom Edition</title>
+  <style>
+    :root {
+      --white: #ededed;
+      --light-gray: #5b5b5b;
+      --medium-gray: #474747;
+      --black: #272727;
+      --pure-black: #000000;
+      --blue: #556ad9;
+      --orange: #f97316;
+      --orange-light: #fdba74;
+      --shadow-button: 0px 2px 0px 0px #5b5b5b inset, 0px -2px 0px 0px #5b5b5b inset, -2px 0px 0px 0px #5b5b5b inset, 2px 0px 0px 0px #5b5b5b inset, 0px 2px 0px 0px #1e1e1e, 2px 0px 0px 0px #191919, -2px 0px 0px 0px #191919, 0px -2px 0px 0px #191919, 0px 4px 0px 0px rgba(25,25,25,0.8);
+      --shadow-window-body: 4px 6px 0px 0px rgba(30,30,30,0.2), -2px 0px 0px 0px #1e1e1e, 2px 0px 0px 0px #1e1e1e, 0px -2px 0px 0px #1e1e1e, 0px 2px 0px 0px #1e1e1e, 0px 4px 0px 0px #1e1e1e, 0px -2px 0px 0px #5b5b5b inset, 0px 2px 0px 0px #5b5b5b inset, -2px 0px 0px 0px #5b5b5b inset, 2px 0px 0px 0px #5b5b5b inset;
+      --shadow-window-head: 0px 2px 0px 0px #5b5b5b inset, -2px 0px 0px 0px #5b5b5b inset, 2px 0px 0px 0px #5b5b5b inset;
+      --shadow-input: -2px 0px 0px 0px #1e1e1e, 2px 0px 0px 0px #1e1e1e, 0px -2px 0px 0px #1e1e1e, 0px 2px 0px 0px #1e1e1e;
+      --shadow-inner-pannel: -2px 0px 0px 0px #0f0f0f, 2px 0px 0px 0px #0f0f0f, 0px -2px 0px 0px #0f0f0f, 0px 2px 0px 0px #0f0f0f, 0px -2px 0px 0px #1e1e1e inset, 0px 2px 0px 0px #1e1e1e inset, -2px 0px 0px 0px #1e1e1e inset, 2px 0px 0px 0px #1e1e1e inset;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: ui-monospace, 'Cascadia Code', 'Courier New', monospace; font-size: 15px; color: var(--white); background: var(--pure-black); overflow: hidden; user-select: none; }
+    button, input { font: inherit; color: inherit; background: transparent; border: none; }
+    button { cursor: pointer; }
+    .app { height: 100%; display: flex; }
+    .window { flex: 1; display: flex; flex-direction: column; background: var(--black); box-shadow: var(--shadow-window-body); }
+    .window-head { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; background: var(--medium-gray); box-shadow: var(--shadow-window-head); font-weight: bold; }
+    .window-body { flex: 1; min-height: 0; display: flex; padding: 6px; }
+    .stage { position: relative; flex: 1; overflow: hidden; background: #140c1c; box-shadow: var(--shadow-inner-pannel); }
+    #game { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .stage.playing { cursor: crosshair; }
+    #ui { position: absolute; inset: 0; pointer-events: none; }
+    .screen { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); transition: opacity 0.15s ease; pointer-events: auto; }
+    .screen.hidden, .hidden { opacity: 0; pointer-events: none !important; }
+    .sfwin { background: var(--black); box-shadow: var(--shadow-window-body); width: min(600px, calc(100% - 32px)); }
+    .sfwin-body { display: flex; flex-direction: column; gap: 14px; padding: 16px; }
+    .hero-title { font-size: 36px; line-height: 1.1; color: var(--white); text-shadow: 2px 2px 0 #000; }
+    .muted { color: #a0a0a0; }
+    .url-row { display: flex; gap: 8px; }
+    .input-wrap { flex: 1; display: flex; align-items: center; padding: 6px 10px; background: var(--pure-black); box-shadow: var(--shadow-input); }
+    .input-wrap .proto { color: var(--light-gray); margin-right: 4px; }
+    .input-wrap input { flex: 1; outline: none; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 12px; background: var(--medium-gray); box-shadow: var(--shadow-button); font-weight: bold; }
+    .btn:hover { background: var(--light-gray); }
+    .presets { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tag { padding: 4px 8px; font-size: 13px; background: #1e1e1e; box-shadow: var(--shadow-input); }
+    .tag:hover { background: var(--medium-gray); }
+    .keys-row { display: flex; flex-wrap: wrap; gap: 8px 16px; color: #a0a0a0; font-size: 13px; }
+    kbd { color: var(--white); background: var(--medium-gray); padding: 1px 5px; box-shadow: var(--shadow-input); font-size: 12px; }
+    /* HUD */
+    #hud { position: absolute; inset: 0; pointer-events: none; }
+    .hud-progress { position: absolute; left: 12px; top: 12px; width: 260px; display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: var(--medium-gray); box-shadow: var(--shadow-window-body); }
+    .meter { position: relative; flex: 1; height: 12px; background: var(--pure-black); box-shadow: var(--shadow-input); }
+    .meter i { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: var(--orange); transition: width 0.1s; }
+    .hud-weapons { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); display: flex; gap: 6px; padding: 6px; background: var(--pure-black); box-shadow: var(--shadow-inner-pannel); pointer-events: auto; }
+    .slot { position: relative; width: 68px; height: 46px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--black); box-shadow: var(--shadow-button); font-size: 11px; cursor: pointer; }
+    .slot.on { background: var(--medium-gray); color: var(--orange-light); }
+    .slot .key { position: absolute; left: 5px; top: 2px; font-size: 10px; color: #888; }
+    .wname { position: absolute; left: 50%; bottom: 70px; transform: translateX(-50%); padding: 4px 10px; background: var(--black); box-shadow: var(--shadow-input); font-weight: bold; }
+    .hud-top-right { position: absolute; right: 12px; top: 12px; display: flex; gap: 8px; pointer-events: auto; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="window">
+      <header class="window-head">
+        <div>Destroy Any Website <span class="muted" style="font-weight:normal">// Custom Reverse-Engineered Engine</span></div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn" id="btn-menu">Menu / Ganti Web</button>
+        </div>
+      </header>
+      <div class="window-body">
+        <div class="stage" id="stage">
+          <canvas id="game"></canvas>
+          <div id="ui">
+            <!-- Title Screen -->
+            <section id="title" class="screen">
+              <div class="sfwin">
+                <div class="window-head"><span>Custom Web Destroyer</span></div>
+                <div class="sfwin-body">
+                  <h1 class="hero-title">Destroy Any Website</h1>
+                  <p class="muted">Ketik alamat website atau pilih template di bawah, lalu hancurkan setiap huruf dan kotaknya!</p>
+                  <form id="urlform" class="url-row" autocomplete="off">
+                    <label class="input-wrap">
+                      <span class="proto">https://</span>
+                      <input id="url" name="url" value="en.wikipedia.org/wiki/Stick_figure" placeholder="contoh: wikipedia.org" />
+                    </label>
+                    <button class="btn" type="submit" style="color:#eddb3d;">&#9889; Destroy</button>
+                  </form>
+                  <div>
+                    <p class="muted" style="margin-bottom:6px; font-size:13px;">Pilih Cepat (Tanpa Proxy / Langsung Main):</p>
+                    <div class="presets">
+                      <button class="tag" type="button" data-preset="wiki">Wikipedia: Stick Figure</button>
+                      <button class="tag" type="button" data-preset="news">Portal Berita</button>
+                      <button class="tag" type="button" data-preset="dashboard">Dashboard SaaS</button>
+                      <button class="tag" type="button" data-preset="custom">Paste HTML Sendiri</button>
+                    </div>
+                  </div>
+                  <textarea id="custom-html" class="hidden" rows="4" style="background:#000; color:#fff; padding:8px; font-family:monospace; box-shadow:var(--shadow-input);" placeholder="Paste kode HTML di sini..."></textarea>
+                  <p id="err" style="color:#fb923c; font-size:13px;"></p>
+                  <div class="keys-row">
+                    <span><kbd>A</kbd> <kbd>D</kbd> Lari</span>
+                    <span><kbd>Space</kbd> / <kbd>W</kbd> Lompat (Tahan = Jetpack)</span>
+                    <span><kbd>S</kbd> Turun Platform</span>
+                    <span><kbd>Klik Kiri</kbd> Tembak</span>
+                    <span><kbd>Klik Kanan</kbd> Granat</span>
+                    <span><kbd>1</kbd>-<kbd>8</kbd> / <kbd>Scroll</kbd> Senjata</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- HUD -->
+            <div id="hud" class="hidden">
+              <div class="hud-progress">
+                <div class="meter"><i id="hud-meter"></i></div>
+                <span id="hud-pct">0%</span>
+              </div>
+              <div class="hud-top-right">
+                <button class="btn" id="btn-restart">Reset Level</button>
+              </div>
+              <div class="wname" id="wname">Pistol</div>
+              <div class="hud-weapons" id="hud-weapons"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden Sandbox untuk merender & mengekstrak koordinat DOM + Huruf -->
+  <div id="dom-sandbox" style="position:fixed; left:-9999px; top:0; width:1200px; background:#fff; color:#000; pointer-events:none; z-index:-1;"></div>
+
+<script>
+// ============================================================================
+// 1. PROCEDURAL WEB AUDIO SYNTHESIZER (Pengganti /assets/sfx/*.json)
+// ============================================================================
+class SoundEngine {
+  constructor() { this.ctx = null; }
+  unlock() {
+    if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+  }
+  play(type) {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.connect(gain); gain.connect(this.ctx.destination);
+
+    if (type === 'pistol' || type === 'smg') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(type === 'smg' ? 320 : 240, t);
+      osc.frequency.exponentialRampToValueAtTime(40, t + 0.08);
+      gain.gain.setValueAtTime(0.25, t);
+      gain.gain.exponentialRampToValueAtTime(0.01, t + 0.08);
+      osc.start(t); osc.stop(t + 0.08);
+    } else if (type === 'shotgun') {
+      this.noise(0.18, 0.35, 800);
+    } else if (type === 'rail') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1200, t);
+      osc.frequency.exponentialRampToValueAtTime(120, t + 0.35);
+      gain.gain.setValueAtTime(0.4, t);
+      gain.gain.exponentialRampToValueAtTime(0.01, t + 0.35);
+      osc.start(t); osc.stop(t + 0.35);
+      this.noise(0.25, 0.25, 2000);
+    } else if (type === 'boom') {
+      this.noise(0.45, 0.5, 350);
+    } else if (type === 'jump') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(180, t);
+      osc.frequency.exponentialRampToValueAtTime(420, t + 0.12);
+      gain.gain.setValueAtTime(0.15, t);
+      gain.gain.exponentialRampToValueAtTime(0.01, t + 0.12);
+      osc.start(t); osc.stop(t + 0.12);
+    } else if (type === 'flame') {
+      this.noise(0.08, 0.08, 600);
+    }
+  }
+  noise(dur, vol, cutoff = 1000) {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    const bufSize = this.ctx.sampleRate * dur;
+    const buf = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+    const src = this.ctx.createBufferSource();
+    src.buffer = buf;
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(cutoff, t);
+    filter.frequency.exponentialRampToValueAtTime(80, t + dur);
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(vol, t);
+    gain.gain.exponentialRampToValueAtTime(0.01, t + dur);
+    src.connect(filter); filter.connect(gain); gain.connect(this.ctx.destination);
+    src.start(t);
+  }
+}
+const sfx = new SoundEngine();
+
+// ============================================================================
+// 2. DEFINISI SENJATA (Hasil Reverse Engineering Array `Zn`)
+// ============================================================================
+const WEAPONS = [
+  { id: "pistol", name: "Pistol", auto: false, cooldown: 0.16, pellets: 1, spread: 0.015, speed: 1800, dmg: 18, pierce: 2, radius: 10, kick: 4, kind: "bullet", color: "#ffd65a" },
+  { id: "smg", name: "SMG", auto: true, cooldown: 0.068, pellets: 1, spread: 0.07, speed: 1650, dmg: 9, pierce: 1, radius: 8, kick: 2.5, kind: "bullet", color: "#ffd65a" },
+  { id: "shotgun", name: "Shotgun", auto: false, cooldown: 0.55, pellets: 9, spread: 0.18, speed: 1450, dmg: 12, pierce: 2, radius: 9, kick: 8, push: 180, kind: "bullet", color: "#ff8a2a" },
+  { id: "launcher", name: "Rocket", auto: false, cooldown: 0.75, pellets: 1, spread: 0, speed: 680, dmg: 90, radius: 52, kick: 7, push: 140, kind: "rocket", color: "#ff4d4d" },
+  { id: "railgun", name: "Railgun", auto: false, cooldown: 1.0, pellets: 1, spread: 0, speed: 0, dmg: 140, radius: 14, kick: 10, push: 240, kind: "rail", color: "#7df9ff" },
+  { id: "flamer", name: "Flamethrower", auto: true, cooldown: 0.025, pellets: 3, spread: 0.14, speed: 520, dmg: 2, radius: 12, kick: 0.5, kind: "flame", color: "#f97316" },
+  { id: "overkill", name: "Too Much (MIRV)", auto: false, cooldown: 1.4, pellets: 1, spread: 0, speed: 620, dmg: 70, radius: 38, kick: 11, push: 260, kind: "mirv", color: "#a855f7" },
+  { id: "neutron", name: "PSR B0531+21", auto: false, cooldown: 1.5, pellets: 1, spread: 0, speed: 540, dmg: 120, radius: 46, kick: 9, push: 160, kind: "star", color: "#8fd3ff" }
+];
+
+// ============================================================================
+// 3. TEMPLATE WEBSITE BAWAAN & DOM-TO-LEVEL PARSER (Fungsi `J4`)
+// ============================================================================
+const PRESETS = {
+  wiki: `
+    <div style="font-family: Georgia, serif; padding: 28px 48px; background: #f8f9fa; color: #202122;">
+      <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:14px; border-bottom:2px solid #a2a9b1; margin-bottom:20px; background:#ffffff; padding:16px; border-radius:4px;">
+        <h2 style="margin:0; font-size:26px;">WIKIPEDIA <span style="font-size:14px; color:#54595d;">The Free Encyclopedia</span></h2>
+        <div style="background:#eaecf0; padding:8px 16px; border:1px solid #a2a9b1; border-radius:4px;">Search Wikipedia...</div>
+      </div>
+      <div style="display:grid; grid-template-columns: 220px 1fr 260px; gap: 24px;">
+        <div style="background:#ffffff; border:1px solid #a2a9b1; padding:16px; border-radius:4px;">
+          <h4 style="border-bottom:1px solid #eaecf0; padding-bottom:6px; margin-bottom:10px;">Contents</h4>
+          <p style="margin:6px 0; color:#3366cc;">1. History</p>
+          <p style="margin:6px 0; color:#3366cc;">2. Gesture</p>
+          <p style="margin:6px 0; color:#3366cc;">3. In Digital Media</p>
+          <p style="margin:6px 0; color:#3366cc;">4. Video Games</p>
+          <p style="margin:6px 0; color:#3366cc;">5. See Also</p>
+        </div>
+        <div style="background:#ffffff; border:1px solid #c8ccd1; padding:24px; border-radius:4px;">
+          <h1 style="font-size:36px; border-bottom:1px solid #a2a9b1; padding-bottom:8px; margin-bottom:14px;">Stick figure</h1>
+          <p style="line-height:1.6; margin-bottom:14px;">A <b>stick figure</b> (also known as a <b>stickman</b>) is a very simple drawing of a human or other animal, in which the limbs and torso are represented using straight lines and the head is a circle.</p>
+          <div style="background:#eef2ff; border-left:4px solid #3366cc; padding:14px; margin:16px 0;">
+            <b>Did you know?</b> Stick figures have been carved into prehistoric rock art for tens of thousands of years before becoming iconic in web animations!
+          </div>
+          <h2 style="font-size:24px; border-bottom:1px solid #eaecf0; padding-bottom:6px; margin:18px 0 10px;">History & Web Culture</h2>
+          <p style="line-height:1.6; margin-bottom:14px;">During the golden era of browser games, stick figures starred in legendary action platformers and physics sandboxes. Now you can blast every single word on this encyclopedia page to pieces!</p>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:16px;">
+            <div style="background:#fef3c7; border:1px solid #f59e0b; padding:12px; border-radius:4px;"><b>Physics Sandbox</b><br/>Shoot blocks to crack and shatter them into fragments.</div>
+            <div style="background:#dcfce7; border:1px solid #10b981; padding:12px; border-radius:4px;"><b>Letter Gravity</b><br/>Every character detaches and bounces individually!</div>
+          </div>
+        </div>
+        <div style="background:#f8f9fa; border:1px solid #a2a9b1; padding:16px; border-radius:4px;">
+          <div style="background:#3366cc; color:#fff; padding:8px; text-align:center; font-weight:bold; margin-bottom:12px;">Stick Figure</div>
+          <div style="background:#ffffff; border:1px solid #c8ccd1; height:150px; display:flex; align-items:center; justify-content:center; margin-bottom:12px; color:#54595d; font-weight:bold;">[ INFOBOX ILLUSTRATION ]</div>
+          <p style="font-size:13px; margin:6px 0;"><b>Medium:</b> Ink, Pixel, Canvas</p>
+          <p style="font-size:13px; margin:6px 0;"><b>Components:</b> Head, Torso, Arms, Legs</p>
+          <p style="font-size:13px; margin:6px 0;"><b>Status:</b> Armed & Dangerous</p>
+        </div>
+      </div>
+    </div>
+  `,
+  news: `
+    <div style="font-family: Arial, sans-serif; padding: 28px 48px; background: #fff1f2; color: #111827;">
+      <div style="background:#be123c; color:#ffffff; padding:18px 24px; border-radius:6px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
+        <h1 style="font-size:32px; margin:0;">BREAKING NEWS TODAY</h1>
+        <span style="background:#fde047; color:#000; padding:6px 12px; font-weight:bold; border-radius:4px;">LIVE REPORT</span>
+      </div>
+      <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px;">
+        <div style="background:#ffffff; border:2px solid #fecdd3; padding:20px; border-radius:8px;">
+          <h2 style="font-size:28px; color:#9f1239; margin-bottom:12px;">Stickman Rogue Agent Destroys Local Website Layout</h2>
+          <p style="line-height:1.6; margin-bottom:14px;">Witnesses report a heavily armed pixel-art character dropping from the top of the viewport with a jetpack, firing rockets and railguns directly into the CSS Grid.</p>
+          <div style="background:#1e293b; color:#38bdf8; padding:18px; border-radius:6px; margin-bottom:14px;">
+            <h3>"Not even the headlines survived," says Lead Frontend Developer.</h3>
+          </div>
+          <p style="line-height:1.6;">Authorities advise all DOM elements to reinforce their border-radius and take cover behind high z-index containers immediately.</p>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <div style="background:#ffffff; border:1px solid #cbd5e1; padding:16px; border-radius:6px;">
+            <h3 style="color:#be123c; margin-bottom:6px;">Market Watch</h3>
+            <p>Pixel Debris +420%<br/>Intact Divs -98%</p>
+          </div>
+          <div style="background:#fef9c3; border:2px solid #eab308; padding:16px; border-radius:6px;">
+            <h3 style="margin-bottom:6px;">Weather Forecast</h3>
+            <p>Heavy rain of MIRV bomblets and flaming typography expected all afternoon.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  `,
+  dashboard: `
+    <div style="font-family: system-ui, sans-serif; padding: 28px 48px; background: #0f172a; color: #f8fafc;">
+      <div style="display:flex; justify-content:space-between; align-items:center; background:#1e293b; padding:16px 24px; border-radius:8px; border:1px solid #334155; margin-bottom:22px;">
+        <h2 style="color:#38bdf8;">CLOUD ANALYTICS PRO</h2>
+        <div style="background:#6366f1; padding:8px 16px; border-radius:6px; font-weight:bold;">Deploy Production</div>
+      </div>
+      <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:16px; margin-bottom:22px;">
+        <div style="background:#1e293b; border:1px solid #334155; padding:16px; border-radius:8px;"><p style="color:#94a3b8;">Active Users</p><h2 style="font-size:28px; color:#4ade80;">128,490</h2></div>
+        <div style="background:#1e293b; border:1px solid #334155; padding:16px; border-radius:8px;"><p style="color:#94a3b8;">Server Uptime</p><h2 style="font-size:28px; color:#38bdf8;">99.98%</h2></div>
+        <div style="background:#1e293b; border:1px solid #334155; padding:16px; border-radius:8px;"><p style="color:#94a3b8;">Error Rate</p><h2 style="font-size:28px; color:#f43f5e;">0.02%</h2></div>
+        <div style="background:#1e293b; border:1px solid #334155; padding:16px; border-radius:8px;"><p style="color:#94a3b8;">Revenue</p><h2 style="font-size:28px; color:#facc15;">$84,210</h2></div>
+      </div>
+      <div style="display:grid; grid-template-columns: 2fr 1fr; gap:18px;">
+        <div style="background:#1e293b; border:1px solid #334155; padding:22px; border-radius:8px;">
+          <h3 style="margin-bottom:12px; color:#e2e8f0;">System Architecture & Logs</h3>
+          <p style="color:#94a3b8; line-height:1.6; margin-bottom:12px;">All microservices are currently nominal. Shoot the KPI cards above to stress-test the infrastructure with live artillery.</p>
+          <div style="background:#020617; border:1px solid #1e293b; padding:14px; border-radius:6px; color:#22c55e;">
+            [OK] worker-node-01 connected<br/>[OK] database-replica synced<br/>[WARN] incoming projectile detected!
+          </div>
+        </div>
+        <div style="background:#312e81; border:1px solid #4f46e5; padding:22px; border-radius:8px;">
+          <h3 style="margin-bottom:10px;">AI Assistant</h3>
+          <p style="line-height:1.5;">Need help optimizing your queries? Try switching to Weapon #5 (Railgun) for instant table cleanup.</p>
+        </div>
+      </div>
+    </div>
+  `
+};
+
+// Fungsi ekstraksi DOM persis seperti arsitektur `J4` di 004-index-ydsvdsxc.js
+function parseDOMToLevel(htmlString) {
+  const sandbox = document.getElementById('dom-sandbox');
+  sandbox.innerHTML = htmlString;
+  const rootRect = sandbox.getBoundingClientRect();
+  const W = 1200;
+  const H = Math.max(720, Math.min(2400, Math.ceil(sandbox.scrollHeight)));
+
+  const blocks = [];
+  const glyphs = [];
+  let baseBg = '#f8f9fa';
+
+  const firstChild = sandbox.firstElementChild;
+  if (firstChild) {
+    const cs = getComputedStyle(firstChild);
+    if (cs.backgroundColor && cs.backgroundColor !== 'rgba(0, 0, 0, 0)') baseBg = cs.backgroundColor;
+  }
+
+  const range = document.createRange();
+  function walk(node) {
+    if (node.nodeType === 1) {
+      const el = node;
+      const tag = el.tagName.toLowerCase();
+      if (['script', 'style', 'head', 'meta', 'link'].includes(tag)) return;
+      const cs = getComputedStyle(el);
+      if (cs.display === 'none' || cs.visibility === 'hidden') return;
+
+      const r = el.getBoundingClientRect();
+      const x = r.left - rootRect.left;
+      const y = r.top - rootRect.top;
+      const w = r.width;
+      const h = r.height;
+
+      const bg = cs.backgroundColor;
+      const hasBg = bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent';
+      const bw = parseFloat(cs.borderTopWidth) || parseFloat(cs.borderLeftWidth) || 0;
+      const borderCol = cs.borderTopColor || '#888';
+
+      if (el !== firstChild && w >= 12 && h >= 12 && (hasBg || bw > 0)) {
+        const canDetach = (w * h) < (W * 720 * 0.28) && h < 500;
+        blocks.push({
+          x, y, w, h,
+          bg: hasBg ? bg : '#ffffff',
+          borderW: bw,
+          borderCol,
+          radius: parseFloat(cs.borderTopLeftRadius) || 0,
+          hp: 25 + 0.45 * Math.sqrt(w * h),
+          damage: 0,
+          alive: true,
+          canDetach
+        });
+      }
+      for (let c = el.firstChild; c; c = c.nextSibling) walk(c);
+    } else if (node.nodeType === 3) {
+      const text = node.data;
+      if (!text.trim()) return;
+      const parent = node.parentElement;
+      if (!parent) return;
+      const cs = getComputedStyle(parent);
+      const font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+      const size = parseFloat(cs.fontSize) || 16;
+      const color = cs.color || '#111';
+
+      for (let i = 0; i < text.length; i++) {
+        if (/\s/.test(text[i])) continue;
+        range.setStart(node, i);
+        range.setEnd(node, i + 1);
+        const rect = range.getClientRects()[0];
+        if (!rect || rect.width < 1 || rect.height < 1) continue;
+        const gx = rect.left - rootRect.left;
+        const gy = rect.top - rootRect.top;
+        if (gx < 0 || gx > W || gy < 0 || gy > H) continue;
+        glyphs.push({
+          ch: text[i],
+          x: gx, y: gy, w: rect.width, h: rect.height,
+          font, size, color,
+          alive: true
+        });
+      }
+    }
+  }
+  walk(sandbox);
+  sandbox.innerHTML = '';
+  return { W, H, baseBg, blocks, glyphs };
+}
+
+// ============================================================================
+// 4. CORE GAME ENGINE (Grid Material, Fisika Huruf, Chunks, Stickman, Senjata)
+// ============================================================================
+const CELL = 4; // Ukuran sel grid destruksi (4px)
+
+class Game {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.keys = {};
+    this.mouse = { x: 0, y: 0, down: false, pressed: false, rightPressed: false };
+    this.weaponIdx = 0;
+    this.playing = false;
+    this.bindEvents();
+    this.buildHUD();
+  }
+
+  buildHUD() {
+    const wrap = document.getElementById('hud-weapons');
+    wrap.innerHTML = '';
+    WEAPONS.forEach((w, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'slot' + (i === this.weaponIdx ? ' on' : '');
+      btn.innerHTML = `<span class="key">${i + 1}</span><span>${w.name.split(' ')[0]}</span>`;
+      btn.onclick = () => this.selectWeapon(i);
+      wrap.appendChild(btn);
+    });
+  }
+
+  selectWeapon(i) {
+    if (i < 0 || i >= WEAPONS.length) return;
+    this.weaponIdx = i;
+    document.getElementById('wname').textContent = WEAPONS[i].name;
+    document.querySelectorAll('#hud-weapons .slot').forEach((el, idx) => {
+      el.classList.toggle('on', idx === i);
+    });
+  }
+
+  bindEvents() {
+    window.addEventListener('resize', () => this.resize());
+    this.resize();
+
+    window.addEventListener('keydown', (e) => {
+      this.keys[e.code] = true;
+      if (e.code.startsWith('Digit')) {
+        const n = parseInt(e.code.slice(5), 10) - 1;
+        if (n >= 0 && n < WEAPONS.length) this.selectWeapon(n);
+      }
+    });
+    window.addEventListener('keyup', (e) => { this.keys[e.code] = false; });
+
+    this.canvas.addEventListener('mousemove', (e) => {
+      const r = this.canvas.getBoundingClientRect();
+      this.mouse.x = e.clientX - r.left;
+      this.mouse.y = e.clientY - r.top;
+    });
+    this.canvas.addEventListener('mousedown', (e) => {
+      sfx.unlock();
+      if (e.button === 0) { this.mouse.down = true; this.mouse.pressed = true; }
+      if (e.button === 2) { this.mouse.rightPressed = true; }
+    });
+    window.addEventListener('mouseup', (e) => {
+      if (e.button === 0) this.mouse.down = false;
+    });
+    this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    window.addEventListener('wheel', (e) => {
+      if (!this.playing) return;
+      const dir = e.deltaY > 0 ? 1 : -1;
+      this.selectWeapon((this.weaponIdx + dir + WEAPONS.length) % WEAPONS.length);
+    });
+  }
+
+  resize() {
+    const r = this.canvas.parentElement.getBoundingClientRect();
+    this.canvas.width = r.width;
+    this.canvas.height = r.height;
+  }
+
+  loadLevel(level) {
+    this.level = level;
+    this.W = level.W;
+    this.H = level.H;
+    this.GW = Math.ceil(this.W / CELL);
+    this.GH = Math.ceil(this.H / CELL);
+
+    // 0 = Hole/Kosong, 1 = Paper/Background, 2 = Block/Solid, 3 = Debris
+    this.mat = new Uint8Array(this.GW * this.GH).fill(1);
+    this.owner = new Int32Array(this.GW * this.GH).fill(-1);
+
+    // Kanvas Halaman & Teks
+    this.pageCanvas = document.createElement('canvas');
+    this.pageCanvas.width = this.W;
+    this.pageCanvas.height = this.H;
+    this.pg = this.pageCanvas.getContext('2d');
+
+    this.textCanvas = document.createElement('canvas');
+    this.textCanvas.width = this.W;
+    this.textCanvas.height = this.H;
+    this.tx = this.textCanvas.getContext('2d');
+
+    // Gambar Background Dasar
+    this.pg.fillStyle = level.baseBg;
+    this.pg.fillRect(0, 0, this.W, this.H);
+
+    // Gambar Blocks & daftarkan ke Grid Material
+    this.blocks = level.blocks.map((b) => ({ ...b, cells: 0, lost: 0 }));
+    this.blocks.forEach((b, idx) => {
+      this.pg.fillStyle = b.bg;
+      this.pg.fillRect(b.x, b.y, b.w, b.h);
+      if (b.borderW > 0) {
+        this.pg.strokeStyle = b.borderCol;
+        this.pg.lineWidth = b.borderW;
+        this.pg.strokeRect(b.x, b.y, b.w, b.h);
+      }
+      const x0 = Math.max(0, Math.floor(b.x / CELL));
+      const y0 = Math.max(0, Math.floor(b.y / CELL));
+      const x1 = Math.min(this.GW - 1, Math.ceil((b.x + b.w) / CELL) - 1);
+      const y1 = Math.min(this.GH - 1, Math.ceil((b.y + b.h) / CELL) - 1);
+      for (let gy = y0; gy <= y1; gy++) {
+        for (let gx = x0; gx <= x1; gx++) {
+          const i = gy * this.GW + gx;
+          this.mat[i] = 2;
+          this.owner[i] = idx;
+          b.cells++;
+        }
+      }
+    });
+
+    // Gambar Huruf (Glyphs)
+    this.glyphs = level.glyphs.map((g) => ({ ...g }));
+    this.glyphs.forEach((g) => {
+      this.tx.font = g.font;
+      this.tx.fillStyle = g.color;
+      this.tx.textBaseline = 'top';
+      this.tx.fillText(g.ch, g.x, g.y);
+    });
+
+    this.totalCells = this.GW * this.GH;
+    this.removedCells = 0;
+    this.poppedLetters = 0;
+
+    // Entitas Dinamis
+    this.player = {
+      x: this.W * 0.35, y: 80, vx: 0, vy: 0,
+      facing: 1, grounded: false, jumps: 1, flipT: -1,
+      jetK: 0, runPhase: 0, cooldown: 0, grenadeCd: 0
+    };
+    this.cam = { x: 0, y: 0, trauma: 0, sx: 0, sy: 0 };
+    this.bullets = [];
+    this.rockets = [];
+    this.grenades = [];
+    this.mirvs = [];
+    this.stars = [];
+    this.flyingLetters = [];
+    this.chunks = [];
+    this.particles = [];
+    this.beams = [];
+    this.fires = new Map();
+
+    this.playing = true;
+    document.getElementById('stage').classList.add('playing');
+  }
+
+  isSurface(gx, gy) {
+    if (gy >= this.GH) return true;
+    if (gx < 0 || gx >= this.GW || gy <= 0) return false;
+    const cur = this.mat[gy * this.GW + gx];
+    const above = this.mat[(gy - 1) * this.GW + gx];
+    return (cur >= 2 && above < 2);
+  }
+
+  findSurface(x0, x1, yFrom, yTo) {
+    const gx0 = Math.floor(x0 / CELL);
+    const gx1 = Math.floor(x1 / CELL);
+    const gy0 = Math.max(0, Math.floor(yFrom / CELL));
+    const gy1 = Math.min(this.GH, Math.ceil(yTo / CELL));
+    for (let gy = gy0; gy <= gy1; gy++) {
+      for (let gx = gx0; gx <= gx1; gx++) {
+        if (this.isSurface(gx, gy)) return gy * CELL;
+      }
+    }
+    return NaN;
+  }
+
+  // Melubangi kanvas & menghanguskan tepian (`carve` + `scorch`)
+  carve(cx, cy, radius, dmg = 20) {
+    const rGrid = Math.ceil(radius / CELL);
+    const gx0 = Math.max(0, Math.floor(cx / CELL) - rGrid);
+    const gx1 = Math.min(this.GW - 1, Math.ceil(cx / CELL) + rGrid);
+    const gy0 = Math.max(0, Math.floor(cy / CELL) - rGrid);
+    const gy1 = Math.min(this.GH - 1, Math.ceil(cy / CELL) + rGrid);
+
+    const hitBlocks = new Set();
+    for (let gy = gy0; gy <= gy1; gy++) {
+      for (let gx = gx0; gx <= gx1; gx++) {
+        const dx = (gx + 0.5) * CELL - cx;
+        const dy = (gy + 0.5) * CELL - cy;
+        if (dx * dx + dy * dy <= radius * radius * (0.85 + Math.random() * 0.3)) {
+          const idx = gy * this.GW + gx;
+          if (this.mat[idx] !== 0) {
+            const bIdx = this.owner[idx];
+            if (bIdx >= 0) {
+              this.blocks[bIdx].lost++;
+              hitBlocks.add(bIdx);
+            }
+            this.mat[idx] = 0;
+            this.removedCells++;
+            if (Math.random() < 0.25) {
+              const ang = Math.atan2(dy, dx) + (Math.random() - 0.5);
+              const spd = 80 + Math.random() * 260;
+              this.particles.push({
+                x: gx * CELL, y: gy * CELL,
+                vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd - 80,
+                life: 0.6 + Math.random() * 0.6, max: 1.2,
+                color: bIdx >= 0 ? this.blocks[bIdx].bg : '#cbd5e1', size: 3
+              });
+            }
+          }
+        }
+      }
+    }
+
+    // Hapus piksel pada kanvas halaman & beri tepian hangus
+    this.pg.save();
+    this.pg.beginPath();
+    this.pg.arc(cx, cy, radius, 0, Math.PI * 2);
+    this.pg.clip();
+    this.pg.clearRect(cx - radius - 2, cy - radius - 2, radius * 2 + 4, radius * 2 + 4);
+    this.pg.restore();
+
+    this.pg.save();
+    this.pg.globalCompositeOperation = 'source-atop';
+    this.pg.strokeStyle = 'rgba(28, 14, 9, 0.55)';
+    this.pg.lineWidth = 4;
+    this.pg.beginPath();
+    this.pg.arc(cx, cy, radius + 1, 0, Math.PI * 2);
+    this.pg.stroke();
+    this.pg.restore();
+
+    // Lepaskan huruf di sekitar area ledakan/tembakan
+    const lRad = radius * 1.6;
+    for (let i = 0; i < this.glyphs.length; i++) {
+      const g = this.glyphs[i];
+      if (!g.alive) continue;
+      const dx = (g.x + g.w / 2) - cx;
+      const dy = (g.y + g.h / 2) - cy;
+      const dist = Math.hypot(dx, dy);
+      if (dist <= lRad) {
+        g.alive = false;
+        this.poppedLetters++;
+        this.tx.clearRect(g.x - 1, g.y - 1, g.w + 2, g.h + 4);
+        const force = (1 - dist / lRad) * 450 + 120;
+        this.flyingLetters.push({
+          ...g,
+          vx: (dx / (dist || 1)) * force + (Math.random() - 0.5) * 100,
+          vy: (dy / (dist || 1)) * force - 180,
+          a: 0,
+          av: (Math.random() - 0.5) * 24,
+          bounces: 0
+        });
+      }
+    }
+
+    // Cek kerusakan blok & lepaskan menjadi Chunk (`detach` & `shatter`)
+    hitBlocks.forEach((bIdx) => {
+      const b = this.blocks[bIdx];
+      if (!b || !b.alive) return;
+      b.damage += dmg;
+      if (b.canDetach && (b.damage >= b.hp || b.lost >= b.cells * 0.38)) {
+        this.detachBlock(bIdx, cx, cy);
+      }
+    });
+  }
+
+  detachBlock(bIdx, hitX, hitY) {
+    const b = this.blocks[bIdx];
+    if (!b || !b.alive) return;
+    b.alive = false;
+
+    const x0 = Math.max(0, Math.floor(b.x / CELL));
+    const y0 = Math.max(0, Math.floor(b.y / CELL));
+    const x1 = Math.min(this.GW - 1, Math.ceil((b.x + b.w) / CELL) - 1);
+    const y1 = Math.min(this.GH - 1, Math.ceil((b.y + b.h) / CELL) - 1);
+    for (let gy = y0; gy <= y1; gy++) {
+      for (let gx = x0; gx <= x1; gx++) {
+        const i = gy * this.GW + gx;
+        if (this.owner[i] === bIdx) {
+          this.mat[i] = 0;
+          this.owner[i] = -1;
+          this.removedCells++;
+        }
+      }
+    }
+
+    // Pecah blok menjadi kepingan poligon/kotak (Shattering)
+    this.pg.clearRect(b.x, b.y, b.w, b.h);
+    const cols = Math.max(2, Math.min(4, Math.round(b.w / 60)));
+    const rows = Math.max(2, Math.min(3, Math.round(b.h / 45)));
+    const pw = b.w / cols;
+    const ph = b.h / rows;
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const px = b.x + c * pw + pw / 2;
+        const py = b.y + r * ph + ph / 2;
+        const dx = px - hitX;
+        const dy = py - hitY;
+        const d = Math.hypot(dx, dy) || 1;
+        this.chunks.push({
+          x: px, y: py, w: pw * 0.92, h: ph * 0.92,
+          vx: (dx / d) * (150 + Math.random() * 220),
+          vy: (dy / d) * 180 - 160 - Math.random() * 120,
+          a: 0, av: (Math.random() - 0.5) * 10,
+          color: b.bg, borderCol: b.borderCol, life: 4.5
+        });
+      }
+    }
+    this.cam.trauma = Math.min(1, this.cam.trauma + 0.25);
+  }
+
+  explode(x, y, radius, dmg = 90) {
+    sfx.play('boom');
+    this.carve(x, y, radius, dmg);
+    this.cam.trauma = Math.min(1, this.cam.trauma + 0.55);
+
+    // Dorong pemain jika dekat ledakan (Rocket Jump!)
+    const pdx = this.player.x - x;
+    const pdy = (this.player.y - 28) - y;
+    const pdist = Math.hypot(pdx, pdy) || 1;
+    if (pdist < radius * 2.5) {
+      const push = (1 - pdist / (radius * 2.5)) * 750;
+      this.player.vx += (pdx / pdist) * push;
+      this.player.vy += (pdy / pdist) * push - 220;
+      this.player.grounded = false;
+    }
+
+    for (let i = 0; i < 45; i++) {
+      const ang = Math.random() * Math.PI * 2;
+      const spd = 60 + Math.random() * 520;
+      this.particles.push({
+        x, y,
+        vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd - 60,
+        life: 0.25 + Math.random() * 0.5, max: 0.75,
+        color: ['#ffffff', '#ffd65a', '#f97316', '#ef4444'][Math.floor(Math.random() * 4)],
+        size: 3 + Math.random() * 5
+      });
+    }
+  }
+
+  step(dt) {
+    if (!this.playing) return;
+    const p = this.player;
+    const worldMouseX = this.mouse.x + this.cam.x;
+    const worldMouseY = this.mouse.y + this.cam.y;
+
+    // 1. Pergerakan Horizontal Pemain
+    const move = (this.keys['KeyD'] || this.keys['ArrowRight'] ? 1 : 0) - (this.keys['KeyA'] || this.keys['ArrowLeft'] ? 1 : 0);
+    const targetVx = move * 270;
+    p.vx += (targetVx - p.vx) * Math.min(1, dt * (p.grounded ? 16 : 7));
+    if (move !== 0 && p.grounded) p.runPhase += dt * 14;
+
+    p.facing = worldMouseX >= p.x ? 1 : -1;
+
+    // 2. Lompat, Salto (Double Jump), Drop-Through, & Jetpack
+    const wantJump = this.keys['Space'] || this.keys['KeyW'] || this.keys['ArrowUp'];
+    if (wantJump && !this.prevJump) {
+      if (p.grounded) {
+        p.vy = -580;
+        p.grounded = false;
+        p.jumps = 1;
+        sfx.play('jump');
+      } else if (p.jumps > 0) {
+        p.vy = -520;
+        p.jumps--;
+        p.flipT = 0;
+        sfx.play('jump');
+      }
+    }
+    this.prevJump = wantJump;
+
+    // Drop-through platform (Tombol S)
+    if ((this.keys['KeyS'] || this.keys['ArrowDown']) && p.grounded && p.y < this.H - 12) {
+      p.y += 6;
+      p.grounded = false;
+      p.vy = 80;
+    }
+
+    // Jetpack saat menahan Space di udara
+    const jetActive = !p.grounded && wantJump && p.vy > -180;
+    p.jetK += ((jetActive ? 1 : 0) - p.jetK) * Math.min(1, dt * 10);
+    if (p.jetK > 0.05) {
+      p.vy -= 2600 * p.jetK * dt;
+      if (p.vy < -380) p.vy = -380;
+      this.particles.push({
+        x: p.x - p.facing * 6, y: p.y - 22,
+        vx: (Math.random() - 0.5) * 60, vy: 220 + Math.random() * 120,
+        life: 0.18, max: 0.18, color: Math.random() > 0.4 ? '#f97316' : '#ffd65a', size: 4
+      });
+    }
+
+    // Gravitasi & Deteksi Permukaan
+    p.vy = Math.min(1100, p.vy + 1500 * dt);
+    const nextX = Math.max(12, Math.min(this.W - 12, p.x + p.vx * dt));
+    const nextY = p.y + p.vy * dt;
+    p.x = nextX;
+
+    if (p.vy >= 0) {
+      const surf = this.findSurface(p.x - 6, p.x + 6, p.y - 4, nextY);
+      if (!Number.isNaN(surf)) {
+        p.y = surf;
+        p.vy = 0;
+        p.grounded = true;
+        p.jumps = 1;
+        p.flipT = -1;
+      } else {
+        p.y = nextY;
+        p.grounded = false;
+      }
+    } else {
+      p.y = Math.max(-300, nextY);
+    }
+
+    if (p.flipT >= 0) {
+      p.flipT += dt / 0.4;
+      if (p.flipT >= 1) p.flipT = -1;
+    }
+
+    // 3. Penembakan Senjata & Granat
+    p.cooldown -= dt;
+    p.grenadeCd -= dt;
+    const w = WEAPONS[this.weaponIdx];
+    const shouldFire = w.auto ? this.mouse.down : this.mouse.pressed;
+    const shoulderX = p.x;
+    const shoulderY = p.y - 34;
+    const aimAngle = Math.atan2(worldMouseY - shoulderY, worldMouseX - shoulderX);
+
+    if (shouldFire && p.cooldown <= 0) {
+      p.cooldown = w.cooldown;
+      this.fireWeapon(w, shoulderX + Math.cos(aimAngle) * 18, shoulderY + Math.sin(aimAngle) * 18, aimAngle, worldMouseX, worldMouseY);
+    }
+
+    if (this.mouse.rightPressed && p.grenadeCd <= 0) {
+      p.grenadeCd = 1.8;
+      this.grenades.push({
+        x: shoulderX, y: shoulderY,
+        vx: Math.cos(aimAngle) * 560 + p.vx * 0.3,
+        vy: Math.sin(aimAngle) * 560 - 180,
+        fuse: 1.5
+      });
+    }
+
+    this.mouse.pressed = false;
+    this.mouse.rightPressed = false;
+
+    // 4. Update Proyektil Peluru
+    for (let i = this.bullets.length - 1; i >= 0; i--) {
+      const b = this.bullets[i];
+      const stepDist = Math.hypot(b.vx * dt, b.vy * dt);
+      const steps = Math.ceil(stepDist / 6);
+      let dead = false;
+      for (let s = 1; s <= steps; s++) {
+        const bx = b.x + (b.vx * dt * s) / steps;
+        const by = b.y + (b.vy * dt * s) / steps;
+        const gx = Math.floor(bx / CELL);
+        const gy = Math.floor(by / CELL);
+        if (bx < 0 || bx > this.W || by < -300 || by > this.H) { dead = true; break; }
+        if (gx >= 0 && gx < this.GW && gy >= 0 && gy < this.GH) {
+          const m = this.mat[gy * this.GW + gx];
+          if (m >= 2 || b.dist + stepDist >= b.range) {
+            this.carve(bx, by, b.radius, b.dmg);
+            if (--b.pierce <= 0 || b.dist + stepDist >= b.range) { dead = true; break; }
+          }
+        }
+      }
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+      b.dist += stepDist;
+      if (dead || (b.life -= dt) <= 0) this.bullets.splice(i, 1);
+    }
+
+    // 5. Update Roket
+    for (let i = this.rockets.length - 1; i >= 0; i--) {
+      const r = this.rockets[i];
+      r.x += r.vx * dt;
+      r.y += r.vy * dt;
+      r.dist += Math.hypot(r.vx * dt, r.vy * dt);
+      this.particles.push({ x: r.x, y: r.y, vx: (Math.random()-0.5)*30, vy: (Math.random()-0.5)*30, life: 0.25, max: 0.25, color: '#94a3b8', size: 4 });
+      const gx = Math.floor(r.x / CELL), gy = Math.floor(r.y / CELL);
+      const hitWall = gx >= 0 && gx < this.GW && gy >= 0 && gy < this.GH && this.mat[gy * this.GW + gx] >= 2;
+      if (hitWall || r.dist >= r.range || r.x < 0 || r.x > this.W || r.y > this.H) {
+        this.explode(r.x, r.y, r.radius, r.dmg);
+        this.rockets.splice(i, 1);
+      }
+    }
+
+    // 6. Update MIRV ("Too Much")
+    for (let i = this.mirvs.length - 1; i >= 0; i--) {
+      const m = this.mirvs[i];
+      m.t += dt;
+      m.vy += 650 * dt;
+      m.x += m.vx * dt;
+      m.y += m.vy * dt;
+      if (m.t >= 0.55) {
+        sfx.play('shotgun');
+        for (let k = 0; k < 7; k++) {
+          const spread = (k - 3) * 95 + (Math.random() - 0.5) * 60;
+          this.grenades.push({ x: m.x, y: m.y, vx: spread, vy: -120 - Math.random() * 100, fuse: 0.7 + Math.random() * 0.5 });
+        }
+        this.mirvs.splice(i, 1);
+      }
+    }
+
+    // 7. Update Bintang Neutron ("PSR B0531+21")
+    for (let i = this.stars.length - 1; i >= 0; i--) {
+      const st = this.stars[i];
+      st.t += dt;
+      st.a += dt * 9.5;
+      // Sapuan 2 pancaran jet pulsar
+      for (const dir of [0, Math.PI]) {
+        const ang = st.a + dir;
+        for (let d = 14; d <= 220; d += 18) {
+          const jx = st.x + Math.cos(ang) * d;
+          const jy = st.y + Math.sin(ang) * d;
+          this.carve(jx, jy, 10, 8);
+        }
+      }
+      if (st.t >= 2.6) {
+        this.explode(st.x, st.y, 75, 160);
+        this.stars.splice(i, 1);
+      }
+    }
+
+    // 8. Update Granat
+    for (let i = this.grenades.length - 1; i >= 0; i--) {
+      const g = this.grenades[i];
+      g.fuse -= dt;
+      g.vy += 1400 * dt;
+      const nx = g.x + g.vx * dt;
+      const ny = g.y + g.vy * dt;
+      const surf = this.findSurface(nx - 3, nx + 3, g.y, ny + 4);
+      if (!Number.isNaN(surf) && g.vy > 0) {
+        g.y = surf - 4;
+        g.vy = -g.vy * 0.45;
+        g.vx *= 0.75;
+      } else {
+        g.x = nx; g.y = ny;
+      }
+      if (g.fuse <= 0) {
+        this.explode(g.x, g.y, 48, 85);
+        this.grenades.splice(i, 1);
+      }
+    }
+
+    // 9. Update Huruf Terbang (`flyingLetters`)
+    for (let i = this.flyingLetters.length - 1; i >= 0; i--) {
+      const fl = this.flyingLetters[i];
+      fl.vy += 1200 * dt;
+      fl.x += fl.vx * dt;
+      fl.y += fl.vy * dt;
+      fl.a += fl.av * dt;
+      const surf = this.findSurface(fl.x - 2, fl.x + 2, fl.y - 4, fl.y + 4);
+      if (!Number.isNaN(surf) && fl.vy > 0) {
+        if (fl.bounces < 2 && fl.vy > 140) {
+          fl.y = surf - 2;
+          fl.vy = -fl.vy * 0.35;
+          fl.vx *= 0.7;
+          fl.bounces++;
+        } else {
+          // Bake kembali ke kanvas halaman
+          this.pg.save();
+          this.pg.translate(fl.x, surf - 2);
+          this.pg.rotate(fl.a);
+          this.pg.font = fl.font;
+          this.pg.fillStyle = fl.color;
+          this.pg.fillText(fl.ch, -fl.w / 2, -fl.h / 2);
+          this.pg.restore();
+          this.flyingLetters.splice(i, 1);
+          continue;
+        }
+      }
+      if (fl.y > this.H + 100) this.flyingLetters.splice(i, 1);
+    }
+
+    // 10. Update Pecahan Blok (`chunks`)
+    for (let i = this.chunks.length - 1; i >= 0; i--) {
+      const ch = this.chunks[i];
+      ch.life -= dt;
+      ch.vy += 1300 * dt;
+      ch.x += ch.vx * dt;
+      ch.y += ch.vy * dt;
+      ch.a += ch.av * dt;
+      const surf = this.findSurface(ch.x - ch.w / 3, ch.x + ch.w / 3, ch.y, ch.y + ch.h / 2);
+      if (!Number.isNaN(surf) && ch.vy > 0) {
+        ch.y = surf - ch.h / 2;
+        ch.vy = -ch.vy * 0.3;
+        ch.vx *= 0.75;
+        ch.av *= 0.6;
+      }
+      if (ch.life <= 0 || ch.y > this.H + 120) this.chunks.splice(i, 1);
+    }
+
+    // 11. Update Partikel & Sinar Railgun
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      const pt = this.particles[i];
+      pt.life -= dt;
+      pt.x += pt.vx * dt;
+      pt.y += pt.vy * dt;
+      if (pt.flame && Math.random() < 0.25) this.carve(pt.x, pt.y, 8, 2);
+      if (pt.life <= 0) this.particles.splice(i, 1);
+    }
+    for (let i = this.beams.length - 1; i >= 0; i--) {
+      if ((this.beams[i].life -= dt) <= 0) this.beams.splice(i, 1);
+    }
+
+    // 12. Kamera & Screen Shake
+    const targetCamX = Math.max(0, Math.min(this.W - this.canvas.width, p.x - this.canvas.width / 2));
+    const targetCamY = Math.max(-120, Math.min(this.H - this.canvas.height, p.y - this.canvas.height / 2));
+    this.cam.x += (targetCamX - this.cam.x) * Math.min(1, dt * 7);
+    this.cam.y += (targetCamY - this.cam.y) * Math.min(1, dt * 6);
+    this.cam.trauma = Math.max(0, this.cam.trauma - dt * 1.8);
+    const shake = this.cam.trauma * this.cam.trauma * 14;
+    this.cam.sx = (Math.random() * 2 - 1) * shake;
+    this.cam.sy = (Math.random() * 2 - 1) * shake;
+
+    // Update Meteran Persentase Kehancuran
+    const letterRatio = this.glyphs.length ? this.poppedLetters / (this.glyphs.length * 0.65) : 0;
+    const cellRatio = this.removedCells / (this.totalCells * 0.35);
+    const pct = Math.min(100, Math.floor((letterRatio * 0.5 + cellRatio * 0.5) * 100));
+    document.getElementById('hud-meter').style.width = pct + '%';
+    document.getElementById('hud-pct').textContent = pct + '%';
+  }
+
+  fireWeapon(w, x, y, angle, targetX, targetY) {
+    const distToCursor = Math.max(60, Math.hypot(targetX - x, targetY - y));
+    this.cam.trauma = Math.min(1, this.cam.trauma + w.kick * 0.018);
+
+    if (w. push) {
+      this.player.vx -= Math.cos(angle) * w.push * (this.player.grounded ? 0.45 : 1);
+      if (!this.player.grounded) this.player.vy -= Math.sin(angle) * w.push * 0.8;
+    }
+
+    if (w.kind === 'bullet') {
+      sfx.play(w.id === 'shotgun' ? 'shotgun' : w.id);
+      for (let i = 0; i < w.pellets; i++) {
+        const a = angle + (Math.random() * 2 - 1) * w.spread;
+        const spd = w.speed * (w.pellets > 1 ? 0.85 + Math.random() * 0.3 : 1);
+        this.bullets.push({
+          x, y, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd,
+          dmg: w.dmg, pierce: w.pierce, radius: w.radius,
+          dist: 0, range: distToCursor * (0.9 + Math.random() * 0.2), life: 1.2, color: w.color
+        });
+      }
+    } else if (w.kind === 'rocket') {
+      sfx.play('shotgun');
+      this.rockets.push({
+        x, y, vx: Math.cos(angle) * w.speed, vy: Math.sin(angle) * w.speed,
+        dmg: w.dmg, radius: w.radius, dist: 0, range: distToCursor
+      });
+    } else if (w.kind === 'rail') {
+      sfx.play('rail');
+      const ux = Math.cos(angle), uy = Math.sin(angle);
+      const maxLen = 1600;
+      for (let d = 0; d < maxLen; d += 10) {
+        this.carve(x + ux * d, y + uy * d, 9, 35);
+      }
+      this.beams.push({ x0: x, y0: y, x1: x + ux * maxLen, y1: y + uy * maxLen, life: 0.35, max: 0.35 });
+    } else if (w.kind === 'flame') {
+      sfx.play('flame');
+      for (let i = 0; i < w.pellets; i++) {
+        const a = angle + (Math.random() * 2 - 1) * w.spread;
+        const spd = w.speed * (0.8 + Math.random() * 0.4);
+        this.particles.push({
+          x, y, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd - 40,
+          life: 0.38, max: 0.38,
+          color: ['#fffbe8', '#ffd65a', '#f97316', '#dc2626'][Math.floor(Math.random() * 4)],
+          size: 6 + Math.random() * 5, flame: true
+        });
+      }
+    } else if (w.kind === 'mirv') {
+      sfx.play('shotgun');
+      this.mirvs.push({ x, y, vx: Math.cos(angle) * w.speed, vy: Math.sin(angle) * w.speed - 140, t: 0 });
+    } else if (w.kind === 'star') {
+      sfx.play('rail');
+      this.stars.push({ x: targetX, y: targetY, a: 0, t: 0 });
+    }
+  }
+
+  draw() {
+    const ctx = this.ctx;
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    if (!this.playing) return;
+
+    const cx = Math.round(this.cam.x + this.cam.sx);
+    const cy = Math.round(this.cam.y + this.cam.sy);
+
+    // Background Langit & Grid Gelap di balik lubang
+    ctx.fillStyle = '#140c1c';
+    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+    ctx.save();
+    ctx.translate(-cx, -cy);
+
+    // Bayangan Kedalaman Lubang (Hole Shadow)
+    ctx.drawImage(this.pageCanvas, 4, 6);
+    ctx.fillStyle = 'rgba(10, 5, 18, 0.65)';
+    ctx.fillRect(0, 0, this.W, this.H);
+
+    // Kanvas Halaman & Kanvas Teks
+    ctx.drawImage(this.pageCanvas, 0, 0);
+    ctx.drawImage(this.textCanvas, 0, 0);
+
+    // Pecahan Blok (Chunks)
+    for (const ch of this.chunks) {
+      ctx.save();
+      ctx.translate(ch.x, ch.y);
+      ctx.rotate(ch.a);
+      ctx.fillStyle = ch.color;
+      ctx.fillRect(-ch.w / 2, -ch.h / 2, ch.w, ch.h);
+      ctx.strokeStyle = ch.borderCol;
+      ctx.strokeRect(-ch.w / 2, -ch.h / 2, ch.w, ch.h);
+      ctx.restore();
+    }
+
+    // Huruf yang Terpental (Flying Letters)
+    for (const fl of this.flyingLetters) {
+      ctx.save();
+      ctx.translate(fl.x, fl.y);
+      ctx.rotate(fl.a);
+      ctx.font = fl.font;
+      ctx.fillStyle = fl.color;
+      ctx.fillText(fl.ch, -fl.w / 2, -fl.h / 2);
+      ctx.restore();
+    }
+
+    // Bintang Neutron (PSR B0531+21)
+    for (const st of this.stars) {
+      ctx.save();
+      ctx.translate(st.x, st.y);
+      for (const dir of [0, Math.PI]) {
+        ctx.save();
+        ctx.rotate(st.a + dir);
+        const grad = ctx.createLinearGradient(0, 0, 220, 0);
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(0.4, '#8fd3ff');
+        grad.addColorStop(1, 'rgba(122, 77, 255, 0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(0, -4); ctx.lineTo(220, -14); ctx.lineTo(220, 14); ctx.lineTo(0, 4);
+        ctx.fill();
+        ctx.restore();
+      }
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.arc(0, 0, 12, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#7a4dff'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(0, 0, 20 + Math.sin(st.t * 25) * 3, 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+    }
+
+    // Sinar Railgun
+    for (const bm of this.beams) {
+      const alpha = bm.life / bm.max;
+      ctx.strokeStyle = `rgba(125, 249, 255, ${alpha})`;
+      ctx.lineWidth = 10 * alpha;
+      ctx.beginPath(); ctx.moveTo(bm.x0, bm.y0); ctx.lineTo(bm.x1, bm.y1); ctx.stroke();
+      ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+      ctx.lineWidth = 4 * alpha;
+      ctx.beginPath(); ctx.moveTo(bm.x0, bm.y0); ctx.lineTo(bm.x1, bm.y1); ctx.stroke();
+    }
+
+    // Peluru, Roket, MIRV, & Granat
+    for (const b of this.bullets) {
+      ctx.strokeStyle = b.color;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(b.x, b.y);
+      ctx.lineTo(b.x - b.vx * 0.018, b.y - b.vy * 0.018);
+      ctx.stroke();
+    }
+    for (const r of this.rockets) {
+      ctx.fillStyle = '#ff4d4d';
+      ctx.beginPath(); ctx.arc(r.x, r.y, 5, 0, Math.PI * 2); ctx.fill();
+    }
+    for (const m of this.mirvs) {
+      ctx.fillStyle = '#a855f7';
+      ctx.beginPath(); ctx.arc(m.x, m.y, 6, 0, Math.PI * 2); ctx.fill();
+    }
+    for (const g of this.grenades) {
+      ctx.fillStyle = Math.sin(g.fuse * 25) > 0 ? '#ef4444' : '#22c55e';
+      ctx.beginPath(); ctx.arc(g.x, g.y, 4.5, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // Partikel
+    for (const pt of this.particles) {
+      ctx.globalAlpha = Math.max(0, pt.life / pt.max);
+      ctx.fillStyle = pt.color;
+      ctx.fillRect(pt.x - pt.size / 2, pt.y - pt.size / 2, pt.size, pt.size);
+    }
+    ctx.globalAlpha = 1;
+
+    // Gambar Procedural Stickman (`drawFighter`)
+    this.drawStickman(ctx);
+
+    ctx.restore();
+  }
+
+  drawStickman(ctx) {
+    const p = this.player;
+    const aimX = this.mouse.x + this.cam.x;
+    const aimY = this.mouse.y + this.cam.y;
+    const aim = Math.atan2(aimY - (p.y - 34), aimX - p.x);
+
+    ctx.save();
+    ctx.translate(p.x, p.y - 28);
+    if (p.flipT >= 0) ctx.rotate(p.facing * p.flipT * Math.PI * 2);
+
+    // Jetpack
+    if (p.jetK > 0.02 || !p.grounded) {
+      ctx.fillStyle = '#64748b';
+      ctx.fillRect(-p.facing * 9 - 4, -12, 8, 16);
+    }
+
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#ff7a2e';
+    ctx.lineWidth = 4.5;
+
+    // Kaki (Animasi Lari)
+    const swing = p.grounded ? Math.sin(p.runPhase) * 10 : 5;
+    ctx.beginPath();
+    ctx.moveTo(0, 6); ctx.lineTo(-swing, 18); ctx.lineTo(-swing * 1.2, 28);
+    ctx.moveTo(0, 6); ctx.lineTo(swing, 18); ctx.lineTo(swing * 1.2, 28);
+    ctx.stroke();
+
+    // Badan (Torso) & Kepala
+    ctx.beginPath();
+    ctx.moveTo(0, 6); ctx.lineTo(0, -14);
+    ctx.stroke();
+
+    ctx.fillStyle = '#ff7a2e';
+    ctx.beginPath();
+    ctx.arc(0, -22, 7.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Tangan & Senjata
+    const gx = Math.cos(aim) * 16;
+    const gy = -8 + Math.sin(aim) * 16;
+    ctx.beginPath();
+    ctx.moveTo(0, -10); ctx.lineTo(gx, gy);
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(gx, gy);
+    ctx.rotate(aim);
+    ctx.fillStyle = '#e2e8f0';
+    ctx.fillRect(-4, -3, 18, 6);
+    ctx.fillStyle = WEAPONS[this.weaponIdx].color;
+    ctx.fillRect(8, -2, 6, 4);
+    ctx.restore();
+
+    ctx.restore();
+  }
+}
+
+// ============================================================================
+// 5. INISIALISASI UI & PEMUATAN URL / PROXY
+// ============================================================================
+const game = new Game(document.getElementById('game'));
+let currentHTML = PRESETS.wiki;
+
+function startWithHTML(html) {
+  currentHTML = html;
+  const level = parseDOMToLevel(html);
+  document.getElementById('title').classList.add('hidden');
+  document.getElementById('hud').classList.remove('hidden');
+  game.loadLevel(level);
+}
+
+document.querySelectorAll('[data-preset]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const key = btn.getAttribute('data-preset');
+    const customBox = document.getElementById('custom-html');
+    if (key === 'custom') {
+      customBox.classList.toggle('hidden');
+      if (!customBox.classList.contains('hidden')) customBox.focus();
+      return;
+    }
+    sfx.unlock();
+    startWithHTML(PRESETS[key]);
+  });
+});
+
+document.getElementById('urlform').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  sfx.unlock();
+  const errEl = document.getElementById('err');
+  errEl.textContent = '';
+
+  const customBox = document.getElementById('custom-html');
+  if (!customBox.classList.contains('hidden') && customBox.value.trim()) {
+    startWithHTML(customBox.value);
+    return;
+  }
+
+  const rawUrl = document.getElementById('url').value.trim().replace(/^https?:\/\//i, '');
+  if (!rawUrl) return;
+
+  // Mencoba mengambil melalui endpoint proxy lokal `/proxy?url=...` jika tersedia
+  try {
+    errEl.textContent = 'Mengambil halaman website...';
+    const res = await fetch(`/proxy?url=${encodeURIComponent('https://' + rawUrl)}`);
+    if (!res.ok) throw new Error('Proxy belum aktif');
+    const html = await res.text();
+    errEl.textContent = '';
+    startWithHTML(html);
+  } catch {
+    errEl.textContent = 'Info: Endpoint /proxy belum aktif, memuat simulasi halaman untuk "' + rawUrl + '"...';
+    setTimeout(() => {
+      errEl.textContent = '';
+      startWithHTML(PRESETS.wiki.replace('Stick figure', rawUrl));
+    }, 600);
+  }
+});
+
+document.getElementById('btn-menu').addEventListener('click', () => {
+  game.playing = false;
+  document.getElementById('stage').classList.remove('playing');
+  document.getElementById('hud').classList.add('hidden');
+  document.getElementById('title').classList.remove('hidden');
+});
+
+document.getElementById('btn-restart').addEventListener('click', () => {
+  startWithHTML(currentHTML);
+});
+
+let lastTime = performance.now();
+function loop(now) {
+  const dt = Math.min(0.033, (now - lastTime) / 1000);
+  lastTime = now;
+  game.step(dt);
+  game.draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
